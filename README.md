@@ -1,5 +1,7 @@
 # OpenCode SDK Telegram Bot Integration
 
+![Cover](./images/telegram_file_modification.jpg)
+
 A practical hands-on project that connects the OpenCode SDK with Telegram, allowing you to control and interact with OpenCode through simple Telegram messages. This integration transforms your Telegram account into a remote control for AI-powered coding assistance and remote operations.
 
 ## Project Overview
@@ -73,6 +75,8 @@ This command reads the package.json file and downloads all necessary libraries i
 After installation completes, verify that the dependencies were installed correctly by checking that the node_modules folder exists and contains the node-telegram-bot-api package.
 
 ### Getting Your Telegram Bot Token
+
+![botfather](./images/botfather.jpg)
 
 Before configuring the bot, you need to obtain a Telegram Bot API token from BotFather:
 
@@ -150,6 +154,8 @@ Once you've installed dependencies and configured environment variables, you're 
 
 To start the OpenCode server locally, run the following command:
 
+![start the OpenCode server locally](./images/console_server_running.jpg)
+
 ```bash
 opencode serve --port 4096
 ```
@@ -161,6 +167,8 @@ Or if you have a remote server, make sure it's running and accessible at the URL
 ### Starting the Bot
 
 Run the following command in your terminal:
+
+![Starting the Bot](./images/bot_server_running.jpg)
 
 ```
 npm start
@@ -214,6 +222,10 @@ Available commands:
 /health - Check Opencode server status
 
 Just send me a message and I'll echo it back!`
+
+![Update sent from Telegram Mobile](./images/telegram_phone_git_instruction.jpg)
+
+![Github updated based on previous instruction](./images/git_updated_by_phone.jpg)
 
 You: `/opencode Write a Python function to reverse a string`
 Bot: `🤖 Processing with Opencode...` (then after processing) `📝 Response:
