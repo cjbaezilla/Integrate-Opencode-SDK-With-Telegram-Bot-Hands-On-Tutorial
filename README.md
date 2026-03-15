@@ -8,6 +8,22 @@ Imagine having an AI coding assistant that you can control from your phone or an
 
 The bot acts as a messenger between you and OpenCode. When you send a message to the bot on Telegram, it translates your request into OpenCode SDK operations and returns the results back to you in Telegram. This means you can start a coding session on a remote server, ask questions about code, request file operations, and get AI assistance all from the convenience of your Telegram app.
 
+## Why Telegram?
+
+Telegram is the ideal platform for this AI coding assistant integration for several compelling reasons:
+
+**Completely Free** - Unlike other messaging platforms, Telegram offers its full Bot API at no cost. There are no subscription fees, message limits, or hidden charges. You can build and deploy bots without worrying about usage caps or per-message fees, making it perfect for experimentation and production use alike.
+
+**Simple and Accessible** - Telegram's bot creation process is straightforward through BotFather, requiring just a few steps to obtain a token. The API is well-documented and developer-friendly, with excellent libraries like `node-telegram-bot-api` that simplify integration. The platform works consistently across all devices and operating systems.
+
+**Freedom from Restrictions** - Unlike WhatsApp's business API, which imposes strict message templates, approval processes, and per-conversation costs, Telegram offers unrestricted messaging. You can send any type of content—code snippets, formatted text, files—without pre-approval or limitations.
+
+**Privacy-First** - Telegram provides end-to-end encryption options and respects user privacy. Bots don't have access to personal data beyond what's necessary for functionality, and the platform doesn't harvest user data for advertising.
+
+**Reliable Infrastructure** - Telegram's servers are robust and globally distributed, ensuring your bot remains accessible with minimal downtime. The messaging delivery is fast and reliable, making it suitable for real-time interactions.
+
+These attributes make Telegram the clear choice for building a remote development assistant that's both cost-effective and powerful.
+
 ## Features
 
 This integration provides several powerful capabilities:
@@ -34,7 +50,7 @@ Before you begin, you need to have the following in place:
 
 **Telegram Bot Token** - You must create a Telegram bot through BotFather on Telegram. This token is like a password that identifies your bot to Telegram's servers. We'll cover how to get this in the installation steps.
 
-**OpenCode Server** - You need access to a running OpenCode server. This could be a local installation on your machine or a remote server. The server URL is required for the bot to connect to OpenCode.
+**OpenCode Server** - You need access to a running OpenCode server. This could be a local installation on your machine or a remote server. **The server must be running before you start the Telegram bot.** The server URL is required for the bot to connect to OpenCode.
 
 **Basic Terminal Knowledge** - You should be comfortable with basic command line operations like navigating folders and running commands.
 
@@ -68,8 +84,6 @@ In the project root, you'll find a .env file (or you'll need to create one). Thi
 
 **OPENCODE_SERVER_URL** - The URL where your OpenCode server is running. For a local server, this might be `http://localhost:3000` or another port depending on your configuration. For a remote server, use its full URL including the protocol.
 
-**OPENCODE_API_KEY** (optional) - If your OpenCode server requires authentication, include the API key here.
-
 **PORT** (optional) - The port on which your bot should run. Default is usually 3000, but you can change it if that port is already in use.
 
 **NODE_ENV** (optional) - Set to `production` for production use or `development` for development mode, which might include extra logging.
@@ -89,6 +103,18 @@ Make sure to replace the placeholder values with your actual bot token and serve
 ## Usage
 
 Once you've installed dependencies and configured environment variables, you're ready to start the bot.
+
+### Important: Start OpenCode Server First
+
+**Before starting the Telegram bot, ensure your OpenCode server is running.** The bot connects to the OpenCode server specified in your `OPENCODE_SERVER_URL` environment variable. If the server is not running, the bot will start but the `/opencode` and `/health` commands will fail.
+
+To start the OpenCode server locally:
+
+```bash
+opencode
+```
+
+Or if you have a remote server, make sure it's running and accessible at the URL you configured.
 
 ### Starting the Bot
 
@@ -242,12 +268,11 @@ bot.onText(/\/start/, (msg) => {
 ### Connecting to OpenCode SDK
 
 ```javascript
-const { OpenCodeClient } = require('opencode-sdk');
+const { createOpencodeClient } = require('@opencode-ai/sdk');
 
 // Create OpenCode client
-const opencode = new OpenCodeClient({
-  serverUrl: process.env.OPENCODE_SERVER_URL,
-  apiKey: process.env.OPENCODE_API_KEY
+const opencode = createOpencodeClient({
+  baseUrl: process.env.OPENCODE_SERVER_URL
 });
 ```
 
@@ -388,6 +413,103 @@ If you're unsure about something, feel free to open an issue to discuss before s
 ## License
 
 This project is provided as-is for educational and practical purposes. Please check the LICENSE file (if present) for specific licensing terms. If no license file exists, you may need to add one or clarify usage rights.
+
+## Troubleshooting
+
+### Common Issues
+
+**"❌ Opencode client not initialized" or connection errors**
+- Ensure the OpenCode server is running before starting the bot
+- Verify `OPENCODE_SERVER_URL` in your `.env` file points to the correct address and port
+- If using a remote server, check that it's accessible from your network
+- Test the server URL in a browser or with curl: `curl http://localhost:4096/health`
+
+**Bot starts but doesn't respond to messages**
+- Check that your `TELEGRAM_BOT_API_KEY` is correct and the bot is not blocked by Telegram
+- Ensure polling is enabled (the bot uses long polling by default)
+- Check the console for any error messages
+
+**"Unknown command" errors**
+- Make sure you're using the correct command syntax (e.g., `/opencode <your prompt>`)
+- Commands are case-sensitive and must start with `/`
+
+**API or authentication errors**
+- Verify `OPENCODE_SERVER_URL` is correct and accessible
+- Check if your OpenCode server requires provider authentication (set in server config)
+
+**Server health check fails**
+- The OpenCode server may not be running or the port might be different
+- If you changed the default port (4096), update `OPENCODE_SERVER_URL` accordingly
+
+#### Diagnosing Connection Issues (ECONNREFUSED)
+
+If your bot shows `TypeError: fetch failed` with `ECONNREFUSED`, use these diagnostic steps:
+
+**1. Check if OpenCode server is running:**
+
+**Windows:**
+```cmd
+tasklist | findstr opencode
+```
+You should see `opencode.exe` or `opencode-cli.exe` in the output.
+
+**macOS/Linux:**
+```bash
+ps aux | grep opencode
+```
+
+**2. Find the actual port the server is using:**
+
+**Windows:**
+```cmd
+netstat -ano | findstr LISTENING
+```
+Look for a process with `opencode.exe` or `opencode-cli.exe` in the PID column, then note the port (e.g., `127.0.0.1:50715`).
+
+Alternative: Use PowerShell to find the port by process name:
+```powershell
+Get-NetTCPConnection -OwningProcess (Get-Process opencode*,opencode-cli* -ErrorAction SilentlyContinue).Id | Select-Object LocalAddress,LocalPort
+```
+
+**macOS/Linux:**
+```bash
+sudo lsof -i -P -n | grep opencode
+```
+or
+```bash
+netstat -tulpn | grep opencode
+```
+
+**3. Test connectivity to the discovered port:**
+```bash
+curl http://localhost:<PORT>/health
+```
+Replace `<PORT>` with the actual port number. You should receive a JSON response with `"healthy": true`.
+
+**4. Update your `.env` file:**
+```
+OPENCODE_SERVER_URL=http://localhost:<ACTUAL_PORT>
+```
+
+### Verifying Setup
+
+1. **First, ensure OpenCode server is running** (see diagnostic steps above if unsure)
+
+2. Check that OpenCode server is healthy:
+   ```bash
+   curl http://localhost:<PORT>/health
+   ```
+   You should see a JSON response with `"healthy": true`. Replace `<PORT>` with your configured port (default: 4096).
+
+3. Verify your `.env` file has the correct URL:
+   ```
+   OPENCODE_SERVER_URL=http://localhost:<PORT>
+   ```
+
+4. Test the bot connection:
+   - Start the bot with `npm start`
+   - Send `/health` command to the bot in Telegram
+   - You should receive a response indicating the server is healthy
 
 ## Getting Help
 

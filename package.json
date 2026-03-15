@@ -1,7 +1,9 @@
 {
+  "type": "module",
   "dependencies": {
     "dotenv": "^17.3.1",
-    "node-telegram-bot-api": "^0.67.0"
+    "node-telegram-bot-api": "^0.67.0",
+    "@opencode-ai/sdk": "^1.2.26"
   },
   "scripts": {
     "start": "node bot.js"

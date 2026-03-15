@@ -1,5 +1,8 @@
-require('dotenv').config();
-const TelegramBot = require('node-telegram-bot-api');
+import dotenv from 'dotenv';
+import TelegramBot from 'node-telegram-bot-api';
+import { createOpencodeClient } from '@opencode-ai/sdk';
+
+dotenv.config();
 
 // Load bot token from .env file
 const token = process.env.TELEGRAM_BOT_API_KEY;
@@ -9,10 +12,35 @@ if (!token) {
   process.exit(1);
 }
 
+// Initialize Opencode client
+const opencodeServerUrl = process.env.OPENCODE_SERVER_URL || 'http://localhost:4096';
+
+let opencodeClient = null;
+
+async function initOpencode() {
+  try {
+    opencodeClient = createOpencodeClient({
+      baseUrl: opencodeServerUrl,
+      throwOnError: false
+    });
+    
+    console.log('✓ Opencode client initialized');
+    return true;
+  } catch (error) {
+    console.error('Failed to initialize Opencode client:', error.message);
+    return false;
+  }
+}
+
 // Create bot with polling enabled
 const bot = new TelegramBot(token, { polling: true });
 
 console.log('Bot is starting...');
+
+// Initialize Opencode
+initOpencode().then(() => {
+  console.log('Opencode integration ready');
+});
 
 const jokes = [
   "Why do programmers prefer dark mode? Because light attracts bugs! 🐛",
@@ -26,14 +54,14 @@ const jokes = [
 ];
 
 // Single message handler for all commands
-bot.on('message', (msg) => {
+bot.on('message', async (msg) => {
   const chatId = msg.chat.id;
   const text = msg.text || '';
 
   // Command handlers
   if (/^\/start$/.test(text)) {
-    const welcomeMessage = `
-🤖 Hello! I'm your Telegram bot.
+      const welcomeMessage = `
+🤖 Hello! I'm your Telegram bot integrated with Opencode.
 
 Available commands:
 /start - Start the bot
@@ -42,15 +70,17 @@ Available commands:
 /time - Get current date and time
 /random - Get a random number (1-100)
 /joke - Get a random joke
+/opencode <prompt> - Ask Opencode AI something
+/health - Check Opencode server status
 
 Just send me a message and I'll echo it back!
-    `.trim();
+      `.trim();
     bot.sendMessage(chatId, welcomeMessage);
     return;
   }
 
   if (/^\/help$/.test(text)) {
-    const helpMessage = `
+      const helpMessage = `
 📋 Available Commands:
 
 /start - Start the bot
@@ -59,9 +89,11 @@ Just send me a message and I'll echo it back!
 /time - Get current date and time
 /random - Get a random number (1-100)
 /joke - Get a random joke
+/opencode <prompt> - Ask Opencode AI something
+/health - Check Opencode server status
 
 💡 Tip: You can also just send any message and I'll echo it back!
-    `.trim();
+      `.trim();
     bot.sendMessage(chatId, helpMessage);
     return;
   }
@@ -97,6 +129,71 @@ Just send me a message and I'll echo it back!
   if (/^\/joke$/.test(text)) {
     const randomJoke = jokes[Math.floor(Math.random() * jokes.length)];
     bot.sendMessage(chatId, `😄 ${randomJoke}`);
+    return;
+  }
+
+  // Opencode integration command
+  const opencodeMatch = text.match(/^\/opencode\s+(.+)/);
+  if (opencodeMatch) {
+    if (!opencodeClient) {
+      bot.sendMessage(chatId, '❌ Opencode client not initialized. Please wait a moment and try again.');
+      return;
+    }
+
+    const prompt = opencodeMatch[1];
+    bot.sendMessage(chatId, '🤖 Processing with Opencode...');
+
+    try {
+      // Create a new session
+      const session = await opencodeClient.session.create({
+        body: { title: `Telegram: ${prompt.substring(0, 30)}...` }
+      });
+
+      if (!session.data?.id) {
+        throw new Error('Failed to create session');
+      }
+
+      // Send prompt and get response
+      const result = await opencodeClient.session.prompt({
+        path: { id: session.data.id },
+        body: {
+          parts: [{ type: 'text', text: prompt }],
+        },
+      });
+
+      // Extract response text
+      let response = 'No response received';
+      if (result.data?.info?.parts) {
+        const textParts = result.data.info.parts
+          .filter(part => part.type === 'text')
+          .map(part => part.text);
+        response = textParts.join('\n') || response;
+      }
+
+      // Clean up: delete the session
+      await opencodeClient.session.delete({ path: { id: session.data.id } });
+
+      bot.sendMessage(chatId, `📝 Response:\n\n${response}`);
+    } catch (error) {
+      console.error('Opencode error:', error);
+      bot.sendMessage(chatId, `❌ Opencode error: ${error.message || 'Unknown error'}`);
+    }
+    return;
+  }
+
+  // Health check command
+  if (/^\/health$/.test(text)) {
+    if (!opencodeClient) {
+      bot.sendMessage(chatId, '❌ Opencode client not initialized');
+      return;
+    }
+
+    try {
+      const health = await opencodeClient.global.health();
+      bot.sendMessage(chatId, `✅ Opencode server is healthy\nVersion: ${health.data.version || 'unknown'}`);
+    } catch (error) {
+      bot.sendMessage(chatId, `❌ Server health check failed: ${error.message}`);
+    }
     return;
   }
 
