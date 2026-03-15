@@ -262,7 +262,7 @@ When you send a message to the bot, here's what happens:
 
 2. The node-telegram-bot-api library polls Telegram or receives a webhook, and our code gets the message.
 
-3. The bot application parses your message to determine what command you want to execute. For example, if you send `/prompt How do I center a div?`, the bot recognizes the `/prompt` command and extracts the text "How do I center a div?".
+3. The bot application parses your message to determine what command you want to execute. For example, if you send `/opencode How do I center a div?`, the bot recognizes the `/opencode` command and extracts the text "How do I center a div?".
 
 4. Using the OpenCode SDK, the bot makes an API call to the OpenCode server. It includes your prompt, the session ID (if you're in a session), and any other relevant parameters.
 
@@ -391,62 +391,6 @@ bot.on('message', async (msg) => {
 });
 ```
 
-### Sending Prompts
-
-```javascript
-async function sendPrompt(sessionId, prompt) {
-  try {
-    const response = await opencode.sessions.prompt(sessionId, {
-      text: prompt
-    });
-    return response.output;
-  } catch (error) {
-    console.error('Failed to send prompt:', error);
-    throw error;
-  }
-}
-```
-
-### Handling Commands
-
-```javascript
-// Handle /prompt command
-bot.onText(/\/prompt (.+)/, async (msg, match) => {
-  const chatId = msg.chat.id;
-  const prompt = match[1]; // The text after /prompt
-
-  // Get current session for this user (stored in a map)
-  const sessionId = getSessionForUser(chatId);
-
-  if (!sessionId) {
-    bot.sendMessage(chatId, 'You need to create a session first. Use /create_session');
-    return;
-  }
-
-  try {
-    bot.sendMessage(chatId, 'Processing your prompt...');
-    const response = await sendPrompt(sessionId, prompt);
-    bot.sendMessage(chatId, response);
-  } catch (error) {
-    bot.sendMessage(chatId, 'Error: ' + error.message);
-  }
-});
-```
-
-### Storing User Sessions
-
-```javascript
-// Simple in-memory store (for production, use a database)
-const userSessions = new Map();
-
-function setSessionForUser(chatId, sessionId) {
-  userSessions.set(chatId, sessionId);
-}
-
-function getSessionForUser(chatId) {
-  return userSessions.get(chatId);
-}
-```
 
 ## Project Structure
 
