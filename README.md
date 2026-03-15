@@ -82,7 +82,7 @@ Before configuring the bot, you need to obtain a Telegram Bot API token from Bot
    - Choose a name for your bot (e.g., "OpenCode Assistant")
    - Choose a username for your bot (must end in "bot", e.g., "opencode_assistant_bot")
 4. BotFather will provide you with a **HTTP API token**. Copy this token
-5. Add it to your `.env` file as `TELEGRAM_BOT_TOKEN=your_token_here`
+5. Add it to your `.env` file as `TELEGRAM_BOT_API_KEY=your_token_here`
 
 Keep this token secret - it's like a password for your bot.
 
@@ -166,15 +166,7 @@ Run the following command in your terminal:
 npm start
 ```
 
-If the start script isn't configured in package.json, you might need to run:
-
-```
-node index.js
-```
-
-or whatever your main entry file is called.
-
-When the bot starts successfully, you should see output indicating that the bot is running and connected to Telegram. It will start polling for messages (checking Telegram for new messages regularly) or set up a webhook if configured that way.
+When the bot starts successfully, you should see output indicating that the bot is running and connected to Telegram.
 
 ### Interacting with the Bot
 
@@ -186,43 +178,53 @@ You can now send commands and messages to the bot. The bot will process your req
 
 The bot supports several commands that map to OpenCode operations:
 
-**/start** - Begins your interaction with the bot. Usually sends a welcome message with available commands and instructions.
+**/start** - Begins your interaction with the bot. Sends a welcome message with available commands.
 
-**/help** - Shows detailed help information about all available commands and how to use them.
+**/help** - Shows detailed help information about all available commands.
 
-**/sessions** - Lists all active OpenCode sessions. You'll see session IDs, names, and status information.
+**/echo <text>** - Repeats back the text you send.
 
-**/create_session** - Creates a new OpenCode session for your work. You might be able to specify a name or project type.
+**/time** - Shows current date and time.
 
-**/delete_session** - Removes a session you no longer need. You typically need to provide a session ID.
+**/random** - Generates a random number between 1 and 100.
 
-**/prompt** - Sends a prompt to the AI. Use it like `/prompt How do I sort an array in JavaScript?` The bot forwards this to OpenCode and returns the AI's response.
+**/joke** - Tells you a random programming joke.
 
-**/execute** - Executes a specific command in OpenCode. This gives you more control over what operation is performed.
+**/opencode <prompt>** - Sends a prompt to OpenCode AI and returns the response. Creates a temporary session, processes your request, and cleans up.
 
-**/files** - Lists files in the current workspace or session.
+**/health** - Checks if the OpenCode server is running and shows the number of active sessions.
 
-**/read** - Reads the contents of a specific file. You'd provide the filename.
-
-**/write** - Writes content to a file. You specify the filename and the content to write.
-
-These commands are just examples. The actual implemented commands depend on what's been built in this project.
+These are the actual commands implemented in this project.
 
 ### Example Conversations
 
 Here's what interacting with the bot might look like:
 
-You: `/sessions`
-Bot: `Active Sessions:\n1. session_123 - Project Alpha - Running\n2. session_456 - Code Review - Idle`
+You: `/start`
+Bot: `🤖 Hello! I'm your Telegram bot integrated with Opencode.
 
-You: `/create_session My New Project`
-Bot: `Session created successfully! Session ID: session_789`
+Available commands:
+/start - Start the bot
+/help - Show this help message
+/echo <text> - Repeat your text
+/time - Get current date and time
+/random - Get a random number (1-100)
+/joke - Get a random joke
+/opencode <prompt> - Ask Opencode AI something
+/health - Check Opencode server status
 
-You: `/prompt Write a Python function to reverse a string`
-Bot: `Here's a function to reverse a string in Python:\n\ndef reverse_string(s):\n    return s[::-1]\n\nThis uses Python's slice notation with a step of -1.`
+Just send me a message and I'll echo it back!`
 
-You: `/read main.py`
-Bot: `Contents of main.py:\n\ndef hello_world():\n    print("Hello, World!")\n\nif __name__ == "__main__":\n    hello_world()`
+You: `/opencode Write a Python function to reverse a string`
+Bot: `🤖 Processing with Opencode...` (then after processing) `📝 Response:
+
+def reverse_string(s):
+    return s[::-1]
+
+This uses Python's slice notation with a step of -1.`
+
+You: `/health`
+Bot: `✅ Opencode server is healthy\nActive sessions: 0`
 
 ## Architecture
 
@@ -292,56 +294,89 @@ To help you understand and extend the integration, here are key code patterns us
 ### Setting Up the Telegram Bot
 
 ```javascript
-const TelegramBot = require('node-telegram-bot-api');
+import TelegramBot from 'node-telegram-bot-api';
 
 // Your bot token from environment variables
-const token = process.env.TELEGRAM_BOT_TOKEN;
+const token = process.env.TELEGRAM_BOT_API_KEY;
 
 // Create a bot that uses polling
 const bot = new TelegramBot(token, { polling: true });
-
-// Handle /start command
-bot.onText(/\/start/, (msg) => {
-  const chatId = msg.chat.id;
-  bot.sendMessage(chatId, 'Welcome to OpenCode Bot! Use /help to see available commands.');
-});
 ```
 
 ### Connecting to OpenCode SDK
 
 ```javascript
-const { createOpencodeClient } = require('@opencode-ai/sdk');
+import { createOpencodeClient } from '@opencode-ai/sdk';
 
 // Create OpenCode client
 const opencode = createOpencodeClient({
-  baseUrl: process.env.OPENCODE_SERVER_URL
+  baseUrl: process.env.OPENCODE_SERVER_URL,
+  throwOnError: false,
+  directory: process.cwd(),
 });
 ```
 
-### Creating and Managing Sessions
+### Session Creation and Prompt Handling
+
+This implementation uses a simple pattern for the `/opencode` command - creating a temporary session, sending a prompt, and cleaning up:
 
 ```javascript
-// Create a new session
-async function createSession(name) {
-  try {
-    const session = await opencode.sessions.create({ name });
-    return session.id;
-  } catch (error) {
-    console.error('Failed to create session:', error);
-    throw error;
-  }
-}
+// Handle /opencode command
+bot.on('message', async (msg) => {
+  const chatId = msg.chat.id;
+  const text = msg.text || '';
 
-// List all sessions
-async function listSessions() {
-  try {
-    const sessions = await opencode.sessions.list();
-    return sessions;
-  } catch (error) {
-    console.error('Failed to list sessions:', error);
-    throw error;
+  const opencodeMatch = text.match(/^\/opencode\s+(.+)/);
+  if (opencodeMatch) {
+    if (!opencodeClient) {
+      bot.sendMessage(chatId, '❌ Opencode client not initialized.');
+      return;
+    }
+
+    const prompt = opencodeMatch[1];
+    bot.sendMessage(chatId, '🤖 Processing with Opencode...');
+
+    try {
+      // Create a new session with a title based on the prompt
+      const session = await opencodeClient.session.create({
+        body: { title: `Telegram: ${prompt.substring(0, 30)}...` }
+      });
+
+      if (session.error) throw new Error('Session creation failed');
+
+      const sessionId = session.data?.id;
+      if (!sessionId) throw new Error('No session ID returned');
+
+      // Send prompt to the session
+      const result = await opencodeClient.session.prompt({
+        path: { id: sessionId },
+        body: {
+          parts: [{ type: 'text', text: prompt }],
+        },
+      });
+
+      if (result.error) throw new Error('Prompt failed');
+
+      // Extract response text from parts
+      let response = 'No response received';
+      if (result.data?.parts) {
+        const textParts = result.data.parts
+          .filter(part => part.type === 'text')
+          .map(part => part.text);
+        response = textParts.join('\n') || response;
+      }
+
+      // Clean up: delete the session after getting response
+      await opencodeClient.session.delete({ path: { id: sessionId } });
+
+      bot.sendMessage(chatId, `📝 Response:\n\n${response}`);
+    } catch (error) {
+      console.error('Opencode error:', error);
+      bot.sendMessage(chatId, `❌ Opencode error: ${error.message}`);
+    }
+    return;
   }
-}
+});
 ```
 
 ### Sending Prompts
@@ -412,20 +447,9 @@ project-root/
 ├── package.json            # Node.js dependencies and scripts
 ├── package-lock.json       # Auto-generated dependency lock file
 ├── opencode.json           # OpenCode agent configurations
-├── index.js                # Main bot application entry point
-├── sessions.js             # Session management logic
-├── handlers/               # Command handlers
-│   ├── promptHandler.js
-│   ├── fileHandler.js
-│   └── sessionHandler.js
-├── utils/                  # Utility functions
-│   ├── formatters.js
-│   └── validators.js
-├── docs/                   # Documentation and reference materials
-│   └── node-telegram-bot-api/  # Library documentation
-└── prompts/                # AI prompt templates
-    ├── documentor.txt
-    └── gitmasters.txt
+├── bot.js                  # Main bot application
+└── docs/                   # Documentation and reference materials
+    └── node-telegram-bot-api/  # Library documentation
 ```
 
 The exact file structure may vary depending on how the project is organized. The main entry point (usually index.js or app.js) is where the bot is initialized and set up.
