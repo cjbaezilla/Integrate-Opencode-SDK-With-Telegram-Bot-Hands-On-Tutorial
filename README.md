@@ -76,29 +76,55 @@ After installation completes, verify that the dependencies were installed correc
 
 The project uses environment variables to store sensitive configuration information. This keeps your secrets safe and makes it easy to change settings without modifying the code.
 
-### The .env File
+### The opencode.json File
 
-In the project root, you'll find a .env file (or you'll need to create one). This file stores key-value pairs that the bot reads when it starts. Here are the variables you need to set:
+In addition to `.env`, the project uses a local `opencode.json` configuration file that defines **agents** and **providers** for OpenCode. This file must exist in your project root and be properly configured with at least one provider.
 
-**TELEGRAM_BOT_TOKEN** - This is the token you get from BotFather when you create your Telegram bot. It looks something like `123456789:ABCdefGHIjklMNOpqrsTUVwxyz`. This token tells Telegram which bot is sending messages.
+**Why is this needed?** The OpenCode SDK reads `opencode.json` to determine which AI providers (like OpenRouter) to use and how to configure its agents. Without this file, the SDK won't know where to send AI requests.
 
-**OPENCODE_SERVER_URL** - The URL where your OpenCode server is running. For a local server started with `opencode serve --port 4096`, use `http://localhost:4096`. For a remote server, use its full URL including the protocol.
+**Location** - The bot.js file initializes the OpenCode client with:
 
-**PORT** (optional) - The port on which your bot should run. Default is usually 3000, but you can change it if that port is already in use.
-
-**NODE_ENV** (optional) - Set to `production` for production use or `development` for development mode, which might include extra logging.
-
-### Setting Up the .env File
-
-If the .env file doesn't exist yet, create it in the project root. Add your configuration like this:
-
-```
-TELEGRAM_BOT_TOKEN=your_telegram_bot_token_here
-OPENCODE_SERVER_URL=http://localhost:4096
-PORT=3000
+```javascript
+const config = {
+  baseUrl: opencodeServerUrl,
+  throwOnError: false,
+  directory: process.cwd(), // Points to your project root where opencode.json lives
+};
 ```
 
-Make sure to replace the placeholder values with your actual bot token and server URL. Keep this file private and never commit it to version control - it's already listed in .gitignore.
+The `directory: process.cwd()` setting tells OpenCode to look for `opencode.json` in the current working directory (your project root). This is why the file must be placed at `D:\DEV\Integrate-Opencode-SDK-With-Telegram-Bot-Hands-On-Tutorial\opencode.json`.
+
+**Example Configuration** - Here's a minimal example of what your `opencode.json` should contain (the actual file has more detailed provider configurations):
+
+```json
+{
+  "$schema": "https://opencode.ai/config.json",
+  "provider": {
+    "openrouter-stepfun": {
+      "npm": "@ai-sdk/openai-compatible",
+      "name": "OpenRouter - StepFun",
+      "options": {
+        "baseURL": "https://openrouter.ai/api/v1",
+        "apiKey": "your-api-key-here"
+      },
+      "models": {
+        "stepfun/step-3.5-flash:free": {
+          "name": "Step 3.5 Flash"
+        }
+      }
+    }
+  }
+}
+```
+
+**Important Notes**:
+- Replace `"your-api-key-here"` with your actual OpenRouter (or other provider) API key
+- The `provider` section is required - at least one provider must be configured
+- You can add multiple providers if needed
+- Keep this file in your project root alongside bot.js
+- Never commit API keys to version control - add `opencode.json` to `.gitignore` if it contains sensitive keys
+
+The provided `opencode.json` in this project already contains configured providers. If you create your own setup, ensure the provider credentials are valid for your AI service.
 
 ## Usage
 
