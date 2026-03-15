@@ -92,6 +92,16 @@ Keep this token secret - it's like a password for your bot.
 
 ## Configuration
 
+> ⚠️ **IMPORTANT: Educational Use Only**
+>
+> .env files containing sensitive credentials **should never be used in production environments**. This project is provided for **educational purposes only** and demonstrates a simple configuration approach. In real-world applications:
+> - Never commit .env files to version control
+> - Use proper secret management solutions (AWS Secrets Manager, HashiCorp Vault, etc.)
+> - Use environment variables securely injected by your deployment platform
+> - Rotate credentials regularly and use the principle of least privilege
+>
+> This tutorial exists to teach integration concepts - always follow security best practices in production systems.
+
 The project uses environment variables to store sensitive configuration information. This keeps your secrets safe and makes it easy to change settings without modifying the code.
 
 ### The opencode.json File
