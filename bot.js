@@ -1,6 +1,7 @@
 import dotenv from 'dotenv';
 import TelegramBot from 'node-telegram-bot-api';
 import { createOpencodeClient } from '@opencode-ai/sdk';
+import path from 'path';
 
 dotenv.config();
 
@@ -19,10 +20,13 @@ let opencodeClient = null;
 
 async function initOpencode() {
   try {
-    opencodeClient = createOpencodeClient({
+    const config = {
       baseUrl: opencodeServerUrl,
-      throwOnError: false
-    });
+      throwOnError: false,
+      directory: process.cwd(),
+    };
+
+    opencodeClient = createOpencodeClient(config);
     
     console.log('✓ Opencode client initialized');
     return true;
@@ -31,6 +35,8 @@ async function initOpencode() {
     return false;
   }
 }
+
+
 
 // Create bot with polling enabled
 const bot = new TelegramBot(token, { polling: true });
@@ -149,29 +155,40 @@ Just send me a message and I'll echo it back!
         body: { title: `Telegram: ${prompt.substring(0, 30)}...` }
       });
 
-      if (!session.data?.id) {
-        throw new Error('Failed to create session');
+      if (session.error) {
+        const errMsg = typeof session.error === 'string' ? session.error : 
+                       session.error?.message || JSON.stringify(session.error);
+        throw new Error(`Session creation failed: ${errMsg}`);
+      }
+
+      const sessionId = session.data?.id;
+      if (!sessionId) {
+        throw new Error('Failed to create session - no ID returned');
       }
 
       // Send prompt and get response
       const result = await opencodeClient.session.prompt({
-        path: { id: session.data.id },
+        path: { id: sessionId },
         body: {
           parts: [{ type: 'text', text: prompt }],
         },
       });
 
+      if (result.error) {
+        throw new Error(typeof result.error === 'string' ? result.error : result.error.message || JSON.stringify(result.error));
+      }
+
       // Extract response text
       let response = 'No response received';
-      if (result.data?.info?.parts) {
-        const textParts = result.data.info.parts
+      if (result.data?.parts) {
+        const textParts = result.data.parts
           .filter(part => part.type === 'text')
           .map(part => part.text);
         response = textParts.join('\n') || response;
       }
 
       // Clean up: delete the session
-      await opencodeClient.session.delete({ path: { id: session.data.id } });
+      await opencodeClient.session.delete({ path: { id: sessionId } });
 
       bot.sendMessage(chatId, `📝 Response:\n\n${response}`);
     } catch (error) {
@@ -189,8 +206,13 @@ Just send me a message and I'll echo it back!
     }
 
     try {
-      const health = await opencodeClient.global.health();
-      bot.sendMessage(chatId, `✅ Opencode server is healthy\nVersion: ${health.data.version || 'unknown'}`);
+      const sessions = await opencodeClient.session.list();
+      if (sessions.error) {
+        bot.sendMessage(chatId, `❌ Server health check failed: ${typeof sessions.error === 'string' ? sessions.error : JSON.stringify(sessions.error)}`);
+      } else {
+        const count = Array.isArray(sessions.data) ? sessions.data.length : 0;
+        bot.sendMessage(chatId, `✅ Opencode server is healthy\nActive sessions: ${count}`);
+      }
     } catch (error) {
       bot.sendMessage(chatId, `❌ Server health check failed: ${error.message}`);
     }

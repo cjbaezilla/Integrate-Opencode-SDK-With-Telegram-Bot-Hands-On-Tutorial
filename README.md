@@ -82,7 +82,7 @@ In the project root, you'll find a .env file (or you'll need to create one). Thi
 
 **TELEGRAM_BOT_TOKEN** - This is the token you get from BotFather when you create your Telegram bot. It looks something like `123456789:ABCdefGHIjklMNOpqrsTUVwxyz`. This token tells Telegram which bot is sending messages.
 
-**OPENCODE_SERVER_URL** - The URL where your OpenCode server is running. For a local server, this might be `http://localhost:3000` or another port depending on your configuration. For a remote server, use its full URL including the protocol.
+**OPENCODE_SERVER_URL** - The URL where your OpenCode server is running. For a local server started with `opencode serve --port 4096`, use `http://localhost:4096`. For a remote server, use its full URL including the protocol.
 
 **PORT** (optional) - The port on which your bot should run. Default is usually 3000, but you can change it if that port is already in use.
 
@@ -94,7 +94,7 @@ If the .env file doesn't exist yet, create it in the project root. Add your conf
 
 ```
 TELEGRAM_BOT_TOKEN=your_telegram_bot_token_here
-OPENCODE_SERVER_URL=http://localhost:3000
+OPENCODE_SERVER_URL=http://localhost:4096
 PORT=3000
 ```
 
@@ -108,11 +108,13 @@ Once you've installed dependencies and configured environment variables, you're 
 
 **Before starting the Telegram bot, ensure your OpenCode server is running.** The bot connects to the OpenCode server specified in your `OPENCODE_SERVER_URL` environment variable. If the server is not running, the bot will start but the `/opencode` and `/health` commands will fail.
 
-To start the OpenCode server locally:
+To start the OpenCode server locally, run the following command:
 
 ```bash
-opencode
+opencode serve --port 4096
 ```
+
+This starts the OpenCode server on port 4096. Make sure your `OPENCODE_SERVER_URL` in the `.env` file is set to `http://localhost:4096`.
 
 Or if you have a remote server, make sure it's running and accessible at the URL you configured.
 
