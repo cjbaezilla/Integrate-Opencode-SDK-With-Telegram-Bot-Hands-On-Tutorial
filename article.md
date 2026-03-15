@@ -2,11 +2,11 @@
 
 ## Introduction
 
-Have you ever wished you could control a powerful AI coding assistant from your phone? Imagine being able to ask programming questions, generate code, and manage development sessions through simple text messages on Telegram. That is exactly what this project makes possible.
+Have you ever wanted to control your computer from your phone? Imagine being able to ask an AI assistant to help with programming tasks, generate code, and manage development work through simple text messages on Telegram. This is exactly what this project makes possible.
 
 This guide will walk you through every single aspect of the OpenCode SDK Telegram Bot integration. By the end, you will understand exactly how this system works, how to set it up, how to use it, and how to extend it. No prior programming knowledge is needed. We will start from the very beginning and build up your understanding piece by piece.
 
-The project connects Telegram messaging with OpenCode AI through a Node.js application. When you send a message to your Telegram bot, it forwards your request to an OpenCode server, processes the AI response, and sends the result back to you. It creates a remote control for AI-powered coding assistance that you can access from anywhere in the world using Telegram.
+This implementation lets you control computer functions through the OpenCode server SDK integration, similar to how the OpenClaw project can control computer behavior. The project connects Telegram messaging with OpenCode AI through a Node.js application. When you send a message to your Telegram bot, it forwards your request to an OpenCode server, processes the AI response, and sends the result back to you. It creates a remote control for AI-powered coding assistance that you can access from anywhere in the world using Telegram.
 
 ## What You Need to Know First
 
@@ -944,7 +944,7 @@ Solution: Check the console for "Polling error" messages. If polling errors are 
 
 We have covered the entire OpenCode SDK Telegram Bot integration project from the ground up. You now understand:
 
-- The purpose: a Telegram bot that lets you interact with OpenCode AI through simple messages
+- The purpose: a Telegram bot that lets you interact with OpenCode AI through simple messages and control computer functions from your phone
 - The project structure: bot.js, package.json, opencode.json, .env
 - Each dependency and why it is needed
 - Every command in the bot and exactly how it works, line by line
