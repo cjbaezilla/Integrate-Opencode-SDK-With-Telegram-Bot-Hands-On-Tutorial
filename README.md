@@ -72,6 +72,20 @@ This command reads the package.json file and downloads all necessary libraries i
 
 After installation completes, verify that the dependencies were installed correctly by checking that the node_modules folder exists and contains the node-telegram-bot-api package.
 
+### Getting Your Telegram Bot Token
+
+Before configuring the bot, you need to obtain a Telegram Bot API token from BotFather:
+
+1. Open Telegram and search for **@BotFather** (the official bot creator)
+2. Start a chat with BotFather and send the `/newbot` command
+3. Follow the prompts:
+   - Choose a name for your bot (e.g., "OpenCode Assistant")
+   - Choose a username for your bot (must end in "bot", e.g., "opencode_assistant_bot")
+4. BotFather will provide you with a **HTTP API token**. Copy this token
+5. Add it to your `.env` file as `TELEGRAM_BOT_TOKEN=your_token_here`
+
+Keep this token secret - it's like a password for your bot.
+
 ## Configuration
 
 The project uses environment variables to store sensitive configuration information. This keeps your secrets safe and makes it easy to change settings without modifying the code.
@@ -92,7 +106,7 @@ const config = {
 };
 ```
 
-The `directory: process.cwd()` setting tells OpenCode to look for `opencode.json` in the current working directory (your project root). This is why the file must be placed at `D:\DEV\Integrate-Opencode-SDK-With-Telegram-Bot-Hands-On-Tutorial\opencode.json`.
+The `directory: process.cwd()` setting tells OpenCode to look for `opencode.json` in the current working directory (your project root). This is why the file must be placed at `./opencode.json`.
 
 **Example Configuration** - Here's a minimal example of what your `opencode.json` should contain (the actual file has more detailed provider configurations):
 
