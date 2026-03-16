@@ -1,4 +1,4 @@
-# OpenCode SDK Telegram Bot: A Complete Beginner's Guide
+# Build Your Own OpenClaw-Inspired Telegram Bot: A Hands-On Guide to OpenCode SDK Integration With OpenRouter Model Agents
 
 ## Introduction
 
