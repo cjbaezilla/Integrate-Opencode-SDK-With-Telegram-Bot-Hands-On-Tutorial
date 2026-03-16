@@ -144,6 +144,21 @@ project-root/
 └── images/                # Documentation images
 ```
 
+### Project Files Reference Table
+
+For a quick overview of each file's purpose and type, refer to this table:
+
+| File/Directory | Purpose | Type |
+|----------------|---------|------|
+| `.env` | Secret configuration (API keys, tokens) | Configuration |
+| `.gitignore` | Files excluded from version control | Configuration |
+| `package.json` | Project metadata and dependencies | Configuration |
+| `package-lock.json` | Exact dependency versions (auto-generated) | Auto-generated |
+| `opencode.json` | OpenCode agent and provider configuration | Configuration |
+| `bot.js` | Main application code | Source Code |
+| `prompts/` | Prompt templates for agents | Directory |
+| `images/` | Documentation images | Directory |
+
 Let us explore each of these elements in depth, understanding not just what they are but why they exist and what would happen if they were missing.
 
 **bot.js** is the heart of the project. This is the main program that runs the bot. It is a JavaScript file containing all the logic: loading configuration, setting up event listeners, handling incoming messages, and calling the OpenCode SDK. Think of it as the brain of the operation. When you run `node bot.js`, Node.js reads this file and executes it. The file starts with import statements to bring in external libraries, then defines functions and event handlers, and finally starts the bot and keeps it running. You will spend most of your time in this file when customizing the bot because it contains the command handlers and business logic. If you want to add a new command, change how messages are processed, or modify the bot's behavior, you edit bot.js. The code is written in modern JavaScript (ES modules) and uses async/await patterns to handle asynchronous operations like network calls gracefully.
@@ -252,6 +267,16 @@ Let us explore what node-telegram-bot-api does under the hood. Telegram's Bot AP
 
 Let us understand what the OpenCode SDK does in more depth. The OpenCode server exposes HTTP endpoints for various operations: creating sessions, sending prompts, listing sessions, deleting sessions, and perhaps others. The API expects specific request and response formats, likely JSON. To use the API directly, you would use a generic HTTP client (like Node's built-in fetch or a library like axios) to make requests to URLs like `http://localhost:4096/session`, with appropriate headers and JSON bodies. You would need to handle authentication if required (maybe via an API key in headers), parse the JSON response, check for error fields, and possibly handle pagination for list operations. The SDK encapsulates all that. You include it in your project (`import { createOpencodeClient } from '@opencode-ai/sdk'`), then call `createOpencodeClient({ baseUrl, throwOnError, directory })`. This returns an object with properties like `session` that itself has methods `create`, `list`, `prompt`, `delete`, etc. When you call these methods, they internally construct the correct URL, send the HTTP request with the appropriate body, parse the response, and return either the data or an error object depending on the `throwOnError` setting. This gives you a clean, JavaScript-friendly interface that feels like a local library rather than a remote API. Additionally, the SDK knows about OpenCode's concept of agents and providers, so it can route requests to different AI models based on configuration. It also may provide type definitions (TypeScript types) that help with autocomplete and error checking in editors. In short, the SDK is a convenience layer that hides the complexity of HTTP and raw JSON handling, letting you focus on the bot logic.
 
+### Dependencies Summary Table
+
+Here is a quick reference for the three dependencies used in this project:
+
+| Package | Version | Purpose |
+|---------|---------|---------|
+| `dotenv` | ^17.3.1 | Load environment variables from .env file into process.env |
+| `node-telegram-bot-api` | ^0.67.0 | Communicate with Telegram Bot API (polling, sending messages) |
+| `@opencode-ai/sdk` | ^1.2.26 | Interface with OpenCode server (sessions, prompts, agents) |
+
 The `"scripts"` section defines shortcuts that can be run with `npm run`. The `"start"` script runs `node bot.js`. This is conventional. You could also define other scripts like `"dev"` to run with auto-reload on file changes, or `"test"` to run tests, or `"lint"` to check code style. Having these scripts in `package.json` means other developers (or you in a few months) will know how to run common tasks just by reading this file.
 
 Scripts are more than just shortcuts; they are a standardized interface to your project. When someone clones your repository, they typically look at package.json to see how to run the project. The "start" script is especially important because it is a de facto standard: many hosting platforms (like Heroku, Railway, Render) automatically run `npm start` to launch your application. By defining "start": "node bot.js", you tell those platforms exactly what command to execute. Similarly, `npm test` runs the "test" script if present, `npm run dev` runs the "dev" script. Writing these scripts in package.json keeps them out of your code and makes them easily accessible. You can also write more complex scripts using npm's ability to run multiple commands with &&, or use pre/post hooks like "pretest" and "poststart". For example, you might add "build": "npm run lint && npm test" or "dev": "nodemon bot.js" to auto-restart on file changes. The script names are just strings; npm provides them as command names.
@@ -292,6 +317,22 @@ The `agent` section defines specialized AI agents. Agents in OpenCode are like d
 
 **gitmasters** is an agent focused on Git operations. It can perform all git-related tasks autonomously. Its temperature is 0.3, making it more deterministic and focused. It has similar tool permissions but asks before fetching web content (`"webfetch": "ask"` versus `"webfetch": "allow"`).
 
+### Agent Configuration Comparison Table
+
+For quick reference, here is a comparison of the two agents defined in this configuration:
+
+| Property | documentor | gitmasters |
+|----------|-----------|------------|
+| Description | Write accessible articles for non-technical audiences | Perform all Git-related operations autonomously |
+| Mode | subagent | subagent |
+| Model | stepfun/step-3.5-flash:free | stepfun/step-3.5-flash:free |
+| Temperature | 0.8 (creative) | 0.3 (precise) |
+| Bash | allow | allow |
+| Write | allow | allow |
+| Read | allow | allow |
+| WebFetch | allow | ask |
+| Tools | Bash, Glob, Grep, Read, Edit, Write, Task, WebFetch | Bash, Glob, Grep, Read, Edit, Write, Task, WebFetch |
+
 Let us unpack the agent concept in depth. An agent is not just a different AI model; it is an entire package of instructions, capabilities, and constraints that shape how the AI behaves. When you interact with OpenCode, you typically work within a session, and that session can be assigned an agent. The agent's prompt (system prompt) is a long text that sets the stage: it might say "You are a technical writer who explains complex topics in simple language for beginners. Avoid jargon, use analogies, keep sentences short. Your output should be friendly and encouraging." This prompt primes the AI to adopt a specific tone, style, and approach. The temperature setting controls randomness: lower temperature makes the AI more predictable and focused on the most likely next words; higher temperature makes it more creative and diverse, sometimes producing more varied phrasing but also potentially more irrelevant content. For creative writing like documentation, a higher temperature can produce more engaging text; for precise code generation, a lower temperature ensures correctness and consistency.
 
 The tools (Bash, Glob, Grep, Read, Edit, Write, Task, WebFetch, etc.) are the primitive operations the agent can perform. These are not just theoretical; the AI can actively decide to use these tools to accomplish a task. For example, if you ask the documentor agent to "write an article about OpenCode", it might use the Read tool to examine existing files in your project to understand the codebase, use WebFetch to gather information from the internet, and then use Write to create a draft file. The ability to run Bash commands is particularly powerful: the agent could compile code, run tests, check git status, or even navigate your file system. This means the AI can interact with your development environment directly, acting almost like a remote pair programmer. However, this power also carries risk: a misconfigured or misbehaving agent could accidentally delete files, run dangerous commands, or leak data. That is why the permission system exists: you can restrict which tools an agent has access to, and for some tools like webfetch you can require the agent to ask for permission ("ask" mode) before using them, giving you a chance to intervene.
@@ -329,6 +370,17 @@ Let us unpack providers in detail. A provider is essentially a bridge between Op
 
 In our configuration, we see four providers, all through OpenRouter, each with different AI models. The bot can use any of these depending on which model is specified in an agent's configuration. OpenRouter is a service that aggregates many AI models from different vendors and provides a unified API. By using OpenRouter as a provider, we can access multiple models without changing our integration code.
 
+### Provider Reference Table
+
+Here is a quick summary of the configured providers:
+
+| Provider | Name | Base URL | Package |
+|----------|------|----------|---------|
+| openrouter-hunter-alpha | OpenRouter Hunter Alpha | https://openrouter.ai/api/v1 | @ai-sdk/openai-compatible |
+| openrouter-nemotron | OpenRouter Nemotron | https://openrouter.ai/api/v1 | @ai-sdk/openai-compatible |
+| openrouter-stepfun | OpenRouter Stepfun | https://openrouter.ai/api/v1 | @ai-sdk/openai-compatible |
+| openrouter-trinity | OpenRouter Trinity | https://openrouter.ai/api/v1 | @ai-sdk/openai-compatible |
+
 This modular architecture is powerful: you can add new providers simply by adding entries to opencode.json, provided you have the necessary npm package installed (which will be a dependency of OpenCode itself, not necessarily ours). You can also switch models by changing the `model` field in an agent's configuration. For example, you could try the same prompt with different models to compare quality, cost, or speed, all without modifying bot.js. This flexibility is one of the strengths of OpenCode.
 
 Important security note: the `opencode.json` file may contain API keys in the `apiKey` fields. In a real deployment, you should never commit these keys to version control. Instead, you can set environment variables in the provider configuration, like `"apiKey": "${OPENROUTER_API_KEY}"`, and then set those environment variables on the system where the bot runs. The SDK will substitute environment variable references. If you do commit keys, at minimum ensure `.gitignore` excludes `opencode.json` and rotate the keys immediately.
@@ -345,6 +397,13 @@ The .env file stores environment variables – configuration values that our app
 TELEGRAM_BOT_API_KEY=your_telegram_bot_token_here
 OPENCODE_SERVER_URL=http://localhost:4096
 ```
+
+### Environment Variables Quick Reference
+
+| Variable | Example Value | Required | Description |
+|----------|---------------|----------|-------------|
+| `TELEGRAM_BOT_API_KEY` | `1234567890:ABCdefGHI...` | Yes | Bot token from BotFather for Telegram API authentication |
+| `OPENCODE_SERVER_URL` | `http://localhost:4096` | No | URL of the OpenCode server (defaults to localhost:4096) |
 
 Environment variables are not unique to Node.js; they are a concept from operating systems. Before a program starts, the operating system can set key-value pairs in its environment, and the program inherits them. In Node.js, these are accessible through `process.env`, an object where each property is an environment variable. You could set environment variables in your shell before running the program: in bash, `export TELEGRAM_BOT_API_KEY=abc123`; in Windows Command Prompt, `set TELEGRAM_BOT_API_KEY=abc123`; in PowerShell, `$env:TELEGRAM_BOT_API_KEY="abc123"`.
 
@@ -641,6 +700,23 @@ Just send me a message and I'll echo it back!
   return;
 }
 ```
+
+### Quick Reference: All Bot Commands
+
+For easy reference, here is a summary of all available commands in this bot:
+
+| Command | Syntax | Description |
+|---------|--------|-------------|
+| /start | `/start` | Initialize the bot and display welcome message |
+| /help | `/help` | Show available commands and usage tips |
+| /echo | `/echo <text>` | Repeat the provided text back to the user |
+| /time | `/time` | Display current date and time |
+| /random | `/random` | Generate a random number between 1-100 |
+| /joke | `/joke` | Tell a random programming joke |
+| /opencode | `/opencode <prompt>` | Send a prompt to OpenCode AI and get a response |
+| /health | `/health` | Check OpenCode server status and active sessions |
+
+This table provides a quick overview; each command is explained in detail throughout this guide.
 
 This block handles the `/start` command. The condition uses a regular expression: `/^\/start$/`. Regular expressions are patterns for matching text. Here, `^` means start of string, `\/` matches a literal slash (escaped because slash is special in regex), `start` matches the word "start", `$` means end of string. So this matches exactly the string "/start" and nothing else.
 
@@ -993,12 +1069,19 @@ But you might want to have longer conversations where context carries over. In t
 
 Our health check command (`/health`) lists all sessions currently on the server. With the current disposable-session pattern, this count should usually be zero or very low, because we delete after each use. If the server crashes or the bot exits without cleaning up, sessions might be left orphaned; health check would reveal them.
 
-The OpenCode SDK provides these session operations:
-- `session.create({ body: { title } })` – create a new session
-- `session.list()` – list all sessions
-- `session.prompt({ path: { id }, body: { parts } })` – send a prompt to a specific session
-- `session.delete({ path: { id } })` – delete a session
-- `session.heartbeat({ path: { id } })` – keep a session alive (prevent timeout)
+### Session Operations Reference
+
+The OpenCode SDK provides the following session operations. Each corresponds to an HTTP endpoint on the OpenCode server:
+
+| Operation | Method | HTTP Endpoint | Description |
+|-----------|--------|---------------|-------------|
+| Create | `session.create({ body: { title } })` | POST /session | Create a new session with a title |
+| List | `session.list()` | GET /session | List all active sessions |
+| Prompt | `session.prompt({ path: { id }, body: { parts } })` | POST /session/{id}/prompt | Send a prompt to a specific session |
+| Delete | `session.delete({ path: { id } })` | DELETE /session/{id} | Delete a session and free resources |
+| Heartbeat | `session.heartbeat({ path: { id } })` | - | Keep a session alive (prevent timeout) |
+
+The heartbeat operation is used to tell the server that an active session is still in use, preventing automatic expiration. The other operations map directly to RESTful endpoints.
 
 In a more advanced bot, you could add commands like `/sessions` to list your sessions, `/switch <id>` to change the active session, `/delete <id>` to remove a specific session, and `/continue` to continue the last session without creating a new one.
 
@@ -1723,6 +1806,21 @@ Support multiple languages for bot responses. Detect user's Telegram language pr
 ## Troubleshooting Common Issues
 
 Let us address the most common problems users encounter.
+
+### Quick Troubleshooting Reference
+
+Before diving into detailed solutions, here's a quick reference table for common error messages:
+
+| Error Message | Likely Cause | Quick Fix |
+|---------------|--------------|-----------|
+| `TELEGRAM_BOT_API_KEY not found` | Missing or incorrect .env file | Create .env with valid token |
+| `Failed to initialize Opencode client` | Missing opencode.json or server unreachable | Check config file and server status |
+| `fetch failed` / `ECONNREFUSED` | OpenCode server not running | Start server on correct port |
+| `Unknown command` | Typo or extra whitespace in command | Check command syntax, type manually |
+| `Opencode client not initialized` | Client setup incomplete | Wait for startup or check logs |
+| `Server health check failed` | OpenCode server down or unreachable | Verify server is running |
+
+This table provides a fast way to diagnose issues. Detailed explanations for each problem are provided in the sections below.
 
 ### "TELEGRAM_BOT_API_KEY not found in .env file"
 
