@@ -1,4 +1,6 @@
 opencode.json
+.opencode/
+AGENTS.md
 prompts/
 node_modules/
 package-lock.json
