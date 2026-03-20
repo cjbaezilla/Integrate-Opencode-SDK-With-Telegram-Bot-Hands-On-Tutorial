@@ -1,6 +1,8 @@
 # OpenCode SDK Telegram Bot Integration
 
-![Cover](./images/telegram_file_modification.jpg)
+![Cover](./images/2.jpg)
+
+![Cover 2](./images/telegram_file_modification.jpg)
 
 A practical hands-on project that connects the OpenCode SDK with Telegram, allowing you to control and interact with OpenCode through simple Telegram messages. This integration transforms your Telegram account into a remote control for AI-powered coding assistance and remote operations.
 
@@ -9,6 +11,14 @@ A practical hands-on project that connects the OpenCode SDK with Telegram, allow
 Imagine having an AI coding assistant that you can control from your phone or any device with Telegram. This project creates a bridge between Telegram messaging and the OpenCode SDK, enabling you to manage remote coding sessions, send prompts, execute commands, and perform file operations using natural language through Telegram.
 
 The bot acts as a messenger between you and OpenCode. When you send a message to the bot on Telegram, it translates your request into OpenCode SDK operations and returns the results back to you in Telegram. This means you can start a coding session on a remote server, ask questions about code, request file operations, and get AI assistance all from the convenience of your Telegram app.
+
+## Follow up
+
+1. 📢 **LinkedIn announcement**: https://www.linkedin.com/posts/carlos-baeza-negroni_opencode-telegrambot-ai-activity-7440754776168062976-OHo1
+2. 📖 **Read the article directly on LinkedIn**: https://www.linkedin.com/pulse/build-your-own-openclaw-inspired-telegram-bot-guide-baeza-negroni-ujyjf
+3. 🐦 **X/Twitter Announcement**: https://x.com/cjbaezilla/status/2034992224446894124
+4. 🔍 **Browse the source article**:
+   [article.md](./article.md)
 
 ## Why Telegram?
 

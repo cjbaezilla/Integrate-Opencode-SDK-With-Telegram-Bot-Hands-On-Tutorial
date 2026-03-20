@@ -1,5 +1,9 @@
 # Build Your Own OpenClaw-Inspired Telegram Bot: A Hands-On Guide to OpenCode SDK Integration With OpenRouter Model Agents
 
+![Cover](./images/2.jpg)
+
+![Cover 2](./images/telegram_file_modification.jpg)
+
 ## Introduction
 
 Have you ever wanted to control your computer from your phone? Imagine being able to ask an AI assistant to help with programming tasks, generate code, and manage development work through simple text messages on Telegram. This is exactly what this project makes possible. Think of it like having a technical expert sitting in your pocket, ready to help whenever you need assistance with coding, regardless of where you are or what you are doing. The bot essentially bridges the gap between your mobile device and your development environment, allowing you to tap into AI-powered coding assistance without needing to sit at your computer.
@@ -13,6 +17,8 @@ The integration might sound complex, but at its heart it is simply three things 
 Let us take a moment to understand why this matters in everyday terms. Many developers spend hours at their computers, but life happens away from the desk. You might be at a family gathering, commuting, or simply away from your machine when a coding question arises. Traditionally, you would have to wait until you return to your computer to address it. This bot eliminates that wait. It puts a powerful coding assistant in your pocket, available at any hour of the day or night. Whether you need a quick syntax reminder, want to generate a function, or need help understanding a complex concept, the bot is ready. This is especially valuable for students learning to code, freelance developers working on multiple projects, or anyone who wants to make productive use of small moments of downtime.
 
 Furthermore, this integration demonstrates how different technologies can work together to solve real problems. You do not need to be an expert in networking, APIs, or artificial intelligence to use it. The goal of this guide is to demystify all of that and give you the confidence to not only use the bot but also modify it for your own needs. By the time you finish reading, you will understand each piece of the puzzle and how they fit together, and you will be able to troubleshoot issues, add new features, and deploy the bot in your own environment.
+
+![Getting Started with Practical Examples](./images/1.jpg)
 
 ## Getting Started with Practical Examples
 
